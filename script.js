@@ -9,6 +9,9 @@ const products = [
 // 页面元素引用
 const productGrid = document.getElementById('productGrid');
 const categoryFilter = document.getElementById('categoryFilter');
+const specFilter = document.getElementById('specFilter');
+const minPriceInput = document.getElementById('minPrice');
+const maxPriceInput = document.getElementById('maxPrice');
 
 // 初始化过滤选项
 function initFilters() {
@@ -18,6 +21,14 @@ function initFilters() {
         opt.value = cat;
         opt.textContent = cat;
         categoryFilter.appendChild(opt);
+    });
+
+    const specs = [...new Set(products.map(p => p.specs))];
+    specs.forEach(sp => {
+        const opt = document.createElement('option');
+        opt.value = sp;
+        opt.textContent = sp;
+        specFilter.appendChild(opt);
     });
 }
 
@@ -41,15 +52,36 @@ function renderProducts(list) {
     });
 }
 
-// 处理筛选
-categoryFilter.addEventListener('change', () => {
-    const val = categoryFilter.value;
-    if (val === 'all') {
-        renderProducts(products);
-    } else {
-        renderProducts(products.filter(p => p.category === val));
-    }
-});
+// 综合筛选函数
+function applyFilters() {
+    let result = products.slice();
+    const cat = categoryFilter.value;
+    const spec = specFilter.value;
+    const minP = parseFloat(minPriceInput.value) || 0;
+    const maxP = parseFloat(maxPriceInput.value) || Infinity;
+
+    if (cat !== 'all') result = result.filter(p => p.category === cat);
+    if (spec !== 'all') result = result.filter(p => p.specs === spec);
+
+    result = result.filter(p => {
+        // 从价格字符串中提取数字
+        const num = parseFloat(p.price.replace(/[¥¥]/g, ''));
+        return num >= minP && num <= maxP;
+    });
+
+    renderProducts(result);
+}
+
+// 事件绑定
+autoFilterEvents();
+
+function autoFilterEvents() {
+    categoryFilter.addEventListener('change', applyFilters);
+    specFilter.addEventListener('change', applyFilters);
+    minPriceInput.addEventListener('input', applyFilters);
+    maxPriceInput.addEventListener('input', applyFilters);
+}
+
 
 // 启动
 initFilters();
